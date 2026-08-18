@@ -1,3 +1,35 @@
+// ═══ Supabase 配置（外网版公共后端）═══
+const SUPABASE_URL = 'https://cjyveohtixrlqouhhtra.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_qcLpTykjDFqfvBcilJjJiw_PVbn79_c';
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': options.prefer || 'return=representation',
+      ...(options.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Supabase error: ' + err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+function getVisitorId() {
+  let id = localStorage.getItem('visitor_id');
+  if (!id) {
+    id = 'v_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem('visitor_id', id);
+  }
+  return id;
+}
+
 /**
  * 图兰的像素农场 v2 - 全升级版
  * Canvas 960×600，像素风格
@@ -2632,43 +2664,89 @@ function buildPlotModal(plot, waterCount, stage, matureThreshold = 20) {
 }
 
 async function plantCrop(plotId, cropType) {
-  var key = 'plot_' + plotId;
-  var data = JSON.parse(localStorage.getItem(key) || '{"water_count":0,"crop_type":null}');
-  data.crop_type = cropType;
-  localStorage.setItem(key, JSON.stringify(data));
+  const vid = getVisitorId();
   if (State.plots) {
-    var plot = State.plots.find(function(p) { return p.id === plotId; });
+    const plot = State.plots.find(p => p.id === plotId);
     if (plot) plot.crop_type = cropType;
   }
   closeModal();
-  showToast('🌱 种植成功！快去浇水让它长大吧');
+  showToast('\u{1F331} 种植成功！快去浇水让它长大吧');
+  if (typeof drawFarm === 'function') drawFarm();
+  try {
+    const existing = await sbFetch(
+      'farm_private_plots?id=eq.' + plotId + '&visitor_id=eq.' + encodeURIComponent(vid) + '&select=id'
+    );
+    if (existing.length) {
+      await sbFetch('farm_private_plots?id=eq.' + plotId + '&visitor_id=eq.' + encodeURIComponent(vid), {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: JSON.stringify({ crop_type: cropType, updated_at: new Date().toISOString() }),
+      });
+    } else {
+      await sbFetch('farm_private_plots', {
+        method: 'POST', prefer: 'return=minimal',
+        body: JSON.stringify({ id: plotId, visitor_id: vid, crop_type: cropType, water_count: 0 }),
+      });
+    }
+  } catch (e) { console.error('plantCrop error', e); }
 }
 
-function waterPlot(plotId) {
-  // GitHub Pages: 用 localStorage 模拟浇水
-  var key = 'plot_' + plotId;
-  var data = JSON.parse(localStorage.getItem(key) || '{"water_count":0,"crop_type":null}');
-  data.water_count = (data.water_count || 0) + 1;
-  localStorage.setItem(key, JSON.stringify(data));
-  
-  // 更新亲密度
-  var intimacy = parseInt(localStorage.getItem('intimacy') || '0') + 10;
-  if (intimacy > 100) intimacy = 100;
-  localStorage.setItem('intimacy', intimacy);
-  State.intimacy = intimacy;
-  updateIntimacyHUD(intimacy);
-  
-  // 更新本地 plot 数据
+async function waterPlot(plotId) {
+  const vid = getVisitorId();
+  const isPrivate = plotId >= 6;
+
   if (State.plots) {
-    var plot = State.plots.find(function(p) { return p.id === plotId; });
+    const plot = State.plots.find(p => p.id === plotId);
     if (plot) {
-      plot.water_count = data.water_count;
+      plot.water_count = (plot.water_count || 0) + 1;
+      plot.stage = isPrivate ? getPrivateStage(plot.water_count) : getPublicStage(plot.water_count);
     }
   }
-  showToast('💧 浇水成功！亲密度 +10 → ' + intimacy);
+  const newIntimacy = Math.min(100, (State.intimacy || 0) + 10);
+  State.intimacy = newIntimacy;
+  updateIntimacyHUD(newIntimacy);
+  showToast('\u{1F4A7} 浇水成功！亲密度 +10 → ' + newIntimacy);
   playWaterSound && playWaterSound();
   closeModal();
   if (typeof drawFarm === 'function') drawFarm();
+
+  try {
+    if (isPrivate) {
+      const existing = await sbFetch(
+        'farm_private_plots?id=eq.' + plotId + '&visitor_id=eq.' + encodeURIComponent(vid) + '&select=water_count'
+      );
+      if (existing.length) {
+        await sbFetch('farm_private_plots?id=eq.' + plotId + '&visitor_id=eq.' + encodeURIComponent(vid), {
+          method: 'PATCH', prefer: 'return=minimal',
+          body: JSON.stringify({ water_count: existing[0].water_count + 1, updated_at: new Date().toISOString() }),
+        });
+      } else {
+        await sbFetch('farm_private_plots', {
+          method: 'POST', prefer: 'return=minimal',
+          body: JSON.stringify({ id: plotId, visitor_id: vid, water_count: 1 }),
+        });
+      }
+    } else {
+      const existing = await sbFetch('farm_plots?id=eq.' + plotId + '&select=water_count');
+      if (existing.length) {
+        await sbFetch('farm_plots?id=eq.' + plotId, {
+          method: 'PATCH', prefer: 'return=minimal',
+          body: JSON.stringify({ water_count: existing[0].water_count + 1, last_waterer: vid, updated_at: new Date().toISOString() }),
+        });
+      }
+    }
+    const intimacyRows = await sbFetch('farm_intimacy?visitor_id=eq.' + encodeURIComponent(vid) + '&select=score');
+    if (intimacyRows.length) {
+      await sbFetch('farm_intimacy?visitor_id=eq.' + encodeURIComponent(vid), {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: JSON.stringify({ score: newIntimacy, updated_at: new Date().toISOString() }),
+      });
+    } else {
+      await sbFetch('farm_intimacy', {
+        method: 'POST', prefer: 'return=minimal',
+        body: JSON.stringify({ visitor_id: vid, score: newIntimacy }),
+      });
+    }
+  } catch (e) { console.error('waterPlot error', e); }
 }
 
 function getCurrentLevelIndex(score) {
@@ -2927,23 +3005,46 @@ function toggleTheme() {
 // 数据加载
 // ═══════════════════════════════════════════════════════
 async function loadFarmData() {
-  // GitHub Pages: 从 localStorage 加载
-  var plots = [];
-  for (var i = 1; i <= 10; i++) {
-    var key = 'plot_' + i;
-    var d = JSON.parse(localStorage.getItem(key) || '{"water_count":0,"crop_type":null}');
-    plots.push({
-      id: i, water_count: d.water_count || 0, crop_type: d.crop_type || null,
-      is_private: i >= 6,
-      mature_threshold: i <= 5 ? 20 : 8,
-      stage: i <= 5 ? getPublicStage(d.water_count||0) : getPrivateStage(d.water_count||0),
-      last_waterer: null,
-    });
+  try {
+    const vid = getVisitorId();
+    const publicPlots = await sbFetch('farm_plots?select=*&order=id');
+    const privatePlots = await sbFetch(
+      'farm_private_plots?select=*&visitor_id=eq.' + encodeURIComponent(vid) + '&order=id'
+    );
+    const privateMap = {};
+    privatePlots.forEach(p => { privateMap[p.id] = p; });
+
+    const plots = [];
+    for (let i = 1; i <= 5; i++) {
+      const p = publicPlots.find(r => r.id === i) || { id: i, water_count: 0, crop_type: null };
+      plots.push({
+        id: i, water_count: p.water_count || 0, crop_type: p.crop_type || null,
+        last_waterer: p.last_waterer || null,
+        is_private: false, mature_threshold: 20,
+        stage: getPublicStage(p.water_count || 0),
+      });
+    }
+    for (let i = 6; i <= 10; i++) {
+      const p = privateMap[i] || { id: i, water_count: 0, crop_type: null };
+      plots.push({
+        id: i, water_count: p.water_count || 0, crop_type: p.crop_type || null,
+        last_waterer: p.last_waterer || null,
+        is_private: true, mature_threshold: 8,
+        stage: getPrivateStage(p.water_count || 0),
+      });
+    }
+    State.plots = plots;
+
+    const intimacyRows = await sbFetch(
+      'farm_intimacy?visitor_id=eq.' + encodeURIComponent(vid) + '&select=score'
+    );
+    State.intimacy = intimacyRows.length ? (intimacyRows[0].score || 0) : 0;
+    updateIntimacyHUD(State.intimacy);
+  } catch (e) {
+    console.error('loadFarmData error', e);
+    State.intimacy = parseInt(localStorage.getItem('intimacy') || '0');
+    updateIntimacyHUD(State.intimacy);
   }
-  State.plots = plots;
-  // 加载亲密度
-  State.intimacy = parseInt(localStorage.getItem('intimacy') || '0');
-  updateIntimacyHUD(State.intimacy);
 }
 
 async function loadScheduleData(force) {
