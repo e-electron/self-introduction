@@ -1123,12 +1123,12 @@ function drawPlots() {
   const firstCustom = CUSTOM_PLOTS[0];
   const lastCustom = CUSTOM_PLOTS[CUSTOM_PLOTS.length - 1];
   const priTitleX = (firstCustom.x + lastCustom.x + lastCustom.w) / 2;
-  const priTitleY = firstCustom.y - 44;  // 原-28，上移16px
+  const priTitleY = firstCustom.y - 8;   // 紧贴私人地顶部上方
   ctx.save();
   ctx.font = `bold ${Math.round(11 * scale)}px "Press Start 2P", monospace`;
   ctx.fillStyle = '#4aaa40';
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
+  ctx.textBaseline = 'bottom';
   ctx.fillText('我的小院', priTitleX * scale, priTitleY * scale);
   ctx.restore();
 
@@ -2071,34 +2071,19 @@ function getCurrentLevel() {
 
 function triggerTuranDialog(useAI = false) {
   if (State.bubble.streaming) return;
-
-  // 当前日程状态优先
   const schedStatus = getTodayScheduleStatus();
-  if (schedStatus.status !== 'free_today' || !useAI) {
-    // 有日程关联对话时优先展示
-    if (schedStatus.dialog) {
-      State.bubble.text = schedStatus.dialog;
-      State.bubble.timer = 200;
-      State.bubble.streaming = false;
-      return;
-    }
-  }
-
-  if (useAI) {
-    // 调用 AI 流式对话
-    const question = '随便和我打个招呼吧～';
-    State.bubble.text = '...';
-    State.bubble.timer = 200;
-    State.bubble.streaming = true;
-    fetchAIBubble(question);
+  if (schedStatus.status !== 'free_today' && schedStatus.dialog) {
+    State.bubble.text = schedStatus.dialog;
+    State.bubble.timer = 220;
+    State.bubble.streaming = false;
     return;
   }
-  // 安全回落：亲密度对话
+  // 外网版直接走亲密度对话
   const level = getCurrentLevel();
   const dialogs = DIALOG_BY_LEVEL[level] || DIALOG_BY_LEVEL[0];
   const text = dialogs[Math.floor(Math.random() * dialogs.length)];
   State.bubble.text = text;
-  State.bubble.timer = 180; // 3 秒 @60fps
+  State.bubble.timer = 220;
   State.bubble.streaming = false;
 }
 
@@ -2635,7 +2620,7 @@ async function plantCrop(plotId, cropType) {
   showToast('🌱 种植成功！快去浇水让它长大吧');
 }
 
-async function waterPlot(plotId) {
+function waterPlot(plotId) {
   // GitHub Pages: 用 localStorage 模拟浇水
   var key = 'plot_' + plotId;
   var data = JSON.parse(localStorage.getItem(key) || '{"water_count":0,"crop_type":null}');
@@ -2658,6 +2643,8 @@ async function waterPlot(plotId) {
   }
   showToast('💧 浇水成功！亲密度 +10 → ' + intimacy);
   playWaterSound && playWaterSound();
+  closeModal();
+  if (typeof drawFarm === 'function') drawFarm();
 }
 
 function getCurrentLevelIndex(score) {
