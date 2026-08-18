@@ -2768,46 +2768,37 @@ document.addEventListener('keydown', e => {
 async function loadBottles() {
   const el = document.getElementById('bottle-list');
   if (!el) return;
-  el.innerHTML = '<div style="font-size:13px;color:#9b7880;text-align:center;padding:8px">加载中...</div>';
+  el.innerHTML = '<div style="font-size:13px;color:#9b7880;text-align:center;padding:12px">加载中...</div>';
   try {
     const rows = await sbFetch('bottles?select=content,nickname,created_at&order=created_at.desc&limit=20');
     if (!rows.length) {
-      el.innerHTML = '<div style="font-size:13px;color:#9b7880;text-align:center;padding:16px">还没有漂流瓶，第一个投吧 🍾</div>';
+      el.innerHTML = '<div style="font-size:13px;color:#9b7880;text-align:center;padding:12px">还没有漂流瓶，来投一个吧 🍾</div>';
       return;
     }
     el.innerHTML = rows.map(r => {
       const d = new Date(r.created_at);
       const timeStr = (d.getMonth()+1) + '/' + d.getDate() + ' ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
-      return '<div class="bottle-item"><div style="font-size:13px;color:#f5e6d0;line-height:1.8">' + r.content + '</div>'
-           + '<div class="bottle-from">— ' + (r.nickname||'匿名旅人') + ' · ' + timeStr + '</div></div>';
+      return '<div class="bottle-item"><div style="font-size:13px;color:#f5e6d0;line-height:1.8">' + r.content + '</div><div class="bottle-from">— ' + r.nickname + ' · ' + timeStr + '</div></div>';
     }).join('');
   } catch(e) {
-    el.innerHTML = '<div style="font-size:13px;color:#9b7880;text-align:center;padding:8px">加载失败，稍后再试</div>';
+    el.innerHTML = '<div style="font-size:13px;color:#9b7880;text-align:center;padding:12px">加载失败，稍后再试</div>';
     console.error('loadBottles error', e);
   }
 }
 
-async function sendBottle() {
-  const input = document.getElementById('bottle-input');
-  const btn = document.getElementById('bottle-send-btn');
-  const content = input.value.trim();
-  if (!content) return;
-  btn.disabled = true;
+async function sendBottle(contentText, nickname) {
   try {
-    const resp = await sbFetch('bottles', { method: 'POST', prefer: 'return=minimal', body: JSON.stringify({ content: bottleText, nickname: '匿名旅人', created_at: new Date().toISOString() }), {
+    await sbFetch('bottles', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content }),
+      prefer: 'return=minimal',
+      body: JSON.stringify({ content: contentText, nickname: nickname || '匿名旅人' }),
     });
-    if (!resp.ok) throw new Error();
-    input.value = '';
-    showToast('🌊 漂流瓶已投出！');
-    await loadBottles();
-  } catch {
-    showToast('❌ 投瓶失败');
+    return true;
+  } catch(e) {
+    console.error('sendBottle error', e);
+    return false;
   }
-  btn.disabled = false;
-}
+
 
 // ═══════════════════════════════════════════════════════
 // HUD 更新
