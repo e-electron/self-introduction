@@ -1,6 +1,6 @@
 // ═══ Supabase 配置（外网版公共后端）═══
 const SUPABASE_URL = 'https://cjyveohtixrlqouhhtra.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_qcLpTykjDFqfvBcilJjJiw_PVbn79_c';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqeXZlb2h0aXhybHFvdWhodHJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMTc2NDEsImV4cCI6MjEwMjU5MzY0MX0.Fl621beNMGYNUYWJNdo1a1fKd3yEQdyOZZ0I0Xhc6J4';
 
 async function sbFetch(path, options = {}) {
   const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
