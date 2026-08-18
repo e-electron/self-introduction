@@ -78,14 +78,14 @@ const CROP_TYPES = {
 <div class="travel-gallery">
   <p class="travel-intro">📍 走过的地方，留下的光 — 从四川出发，世界很大，都想去看看</p>
   <div class="travel-grid">
-    <div class="travel-item"><img src="./assets/travel_new1.jpg" alt="漂流"><span>漂流 · 哈哈哈哈哈 🚣</span></div>
-    <div class="travel-item"><img src="./assets/travel_new2.jpg" alt="瀑布前"><span>瀑布前，不顾形象地美 🌊</span></div>
-    <div class="travel-item"><img src="./assets/travel_new3.jpg" alt="蓝湖"><span>蓝到不真实的湖 💙</span></div>
-    <div class="travel-item"><img src="./assets/travel_new4.jpg" alt="雪山"><span>川西雪山，渺小又快乐 🏔️</span></div>
-    <div class="travel-item"><img src="./assets/travel1.jpg" alt="白塔雪山"><span>川西 · 白塔与雪山</span></div>
-    <div class="travel-item"><img src="./assets/travel3.jpg" alt="雨中探险"><span>雨中探险，透明雨衣战士 ☂️</span></div>
-    <div class="travel-item"><img src="./assets/travel4.jpg" alt="黄昏剪影"><span>黄昏剪影，去摘星星 🌙</span></div>
-    <div class="travel-item"><img src="./assets/travel6.jpg" alt="瀑布"><span>瀑布前的风 🌊</span></div>
+    <div class="travel-item"><img src="./travel_new1.jpg" alt="漂流"><span>漂流 · 哈哈哈哈哈 🚣</span></div>
+    <div class="travel-item"><img src="./travel_new2.jpg" alt="瀑布前"><span>瀑布前，不顾形象地美 🌊</span></div>
+    <div class="travel-item"><img src="./travel_new3.jpg" alt="蓝湖"><span>蓝到不真实的湖 💙</span></div>
+    <div class="travel-item"><img src="./travel_new4.jpg" alt="雪山"><span>川西雪山，渺小又快乐 🏔️</span></div>
+    <div class="travel-item"><img src="./travel1.jpg" alt="白塔雪山"><span>川西 · 白塔与雪山</span></div>
+    <div class="travel-item"><img src="./travel3.jpg" alt="雨中探险"><span>雨中探险，透明雨衣战士 ☂️</span></div>
+    <div class="travel-item"><img src="./travel4.jpg" alt="黄昏剪影"><span>黄昏剪影，去摘星星 🌙</span></div>
+    <div class="travel-item"><img src="./travel6.jpg" alt="瀑布"><span>瀑布前的风 🌊</span></div>
   </div>
   <p class="travel-footer">「能走多远就走多远，攀岩攀的是岩，旅行攀的是山河」</p>
 </div>` },
@@ -94,9 +94,9 @@ const CROP_TYPES = {
 <div class="travel-gallery">
   <p class="travel-intro">📷 随手拍下的光 — 喜欢追日落，觉得美的瞬间就要按快门</p>
   <div class="travel-grid">
-    <div class="travel-item"><img src="./assets/camera1.jpg" alt="日落延时"><span>追着日落，一帧一帧看它沉下去 🌅</span></div>
-    <div class="travel-item"><img src="./assets/camera2.jpg" alt="晚霞大桥"><span>晚霞把桥都染成橙色了 🌉</span></div>
-    <div class="travel-item"><img src="./assets/travel2.jpg" alt="铁花表演"><span>夜里的铁花，像流星 ✨</span></div>
+    <div class="travel-item"><img src="./camera1.jpg" alt="日落延时"><span>追着日落，一帧一帧看它沉下去 🌅</span></div>
+    <div class="travel-item"><img src="./camera2.jpg" alt="晚霞大桥"><span>晚霞把桥都染成橙色了 🌉</span></div>
+    <div class="travel-item"><img src="./travel2.jpg" alt="铁花表演"><span>夜里的铁花，像流星 ✨</span></div>
   </div>
   <p class="travel-footer">「光线最好看的时候，就是它快消失的时候」</p>
 </div>` },
@@ -104,8 +104,8 @@ const CROP_TYPES = {
 <div class="travel-gallery">
   <p class="travel-intro">☕ 日常碎片 — 写代码之外的图兰，也挺好玩的</p>
   <div class="travel-grid">
-    <div class="travel-item"><img src="./assets/daily1.jpg" alt="汉服写真"><span>汉服体验 · 古装美人 ✨ 图兰出没于古装现场</span></div>
-    <div class="travel-item"><img src="./assets/travel5.jpg" alt="喂猴子"><span>和小猴子拉手，它不拒绝我 🐒</span></div>
+    <div class="travel-item"><img src="./daily1.jpg" alt="汉服写真"><span>汉服体验 · 古装美人 ✨ 图兰出没于古装现场</span></div>
+    <div class="travel-item"><img src="./travel5.jpg" alt="喂猴子"><span>和小猴子拉手，它不拒绝我 🐒</span></div>
   </div>
   <p class="travel-footer">「代码写多了就去穿汉服，换个系统重启一下」</p>
 </div>` },
@@ -2055,10 +2055,34 @@ function gameLoop(timestamp) {
 // 对话系统
 // ═══════════════════════════════════════════════════════
 const DIALOG_BY_LEVEL = {
-  0: ['你好呀，欢迎来我的农场！', '要帮我浇浇水吗？'],
-  30: ['又来啦！最近在看什么书？', '这块地快熟了，来看看？'],
-  60: ['嘿！今天心情怎么样？', '来聊聊天嘛～'],
-  90: ['老朋友！来加个微信吧！e-electron'],
+  0: [
+    '你好呀，欢迎来我的农场！',
+    '要帮我浇浇水吗？',
+    '第一次来？随便逛逛～',
+    '我是图兰，一个喜欢像素风的前端工程师',
+    '看到那片辣椒地了吗？四川人，你懂的 🌶️',
+  ],
+  30: [
+    '又来啦！最近在看什么书？',
+    '这块地快熟了，来看看？',
+    '我的茶叶地长得不错吧？',
+    '今天天气不错，适合浇浇水 🌱',
+    '每次看到你来，心情都变好了',
+  ],
+  60: [
+    '嘿！今天心情怎么样？',
+    '来聊聊天嘛～',
+    '书架角落的书单更新了，去看看？',
+    '我最近在看《三体》，你也看过吗？',
+    '运动场的篮球架修好了，来投一个？',
+  ],
+  90: [
+    '老朋友！来加个微信吧！e-electron',
+    '谢谢你一直来帮我浇水 🌱',
+    '要不要来小红书找我玩？',
+    '下次请你喝奶茶！',
+    '我的好基友，今天想聊什么？',
+  ],
 };
 
 function getCurrentLevel() {
@@ -2069,7 +2093,7 @@ function getCurrentLevel() {
   return 0;
 }
 
-function triggerTuranDialog(useAI = false) {
+function triggerTuranDialog(useAI) {
   if (State.bubble.streaming) return;
   const schedStatus = getTodayScheduleStatus();
   if (schedStatus.status !== 'free_today' && schedStatus.dialog) {
@@ -2333,11 +2357,11 @@ function buildSportsModal() {
     <div class="modal-body">
       <div class="gym-photos">
         <div class="gym-photo-item">
-          <img src="./assets/gym1.jpg" alt="力量训练">
+          <img src="./gym1.jpg" alt="力量训练">
           <span>背训日常 · 拉背机死忠粉 💪</span>
         </div>
         <div class="gym-photo-item">
-          <img src="./assets/gym2.jpg" alt="抱石攀岩">
+          <img src="./gym2.jpg" alt="抱石攀岩">
           <span>抱石攀岩 · 每条线都是一道 bug 🧗</span>
         </div>
       </div>
