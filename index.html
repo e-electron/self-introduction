@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图兰的像素农场 🌾</title>
+  <link rel="stylesheet" href="./assets/farm.css">
+</head>
+<body>
+  <!-- HUD 层（HTML 叠加在 Canvas 上方） -->
+  <div id="hud">
+    <div id="hud-left">
+      <div id="hud-title">图兰的农场 🌾</div>
+      <div id="intimacy-group">
+        <div id="intimacy-label">亲密度 0</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div id="intimacy-bar-wrap">
+            <div id="intimacy-bar"></div>
+          </div>
+          <span id="intimacy-rank">🚶 路人</span>
+        </div>
+      </div>
+    </div>
+    <div id="hud-right">
+      <!-- 天气/昼夜切换（3选1） -->
+      <div class="weather-btn-group">
+        <button class="weather-btn active" data-weather="day"
+                onclick="setWeather('day')" title="白天模式">☀️</button>
+        <button class="weather-btn" data-weather="night"
+                onclick="setWeather('night')" title="夜晚模式">🌙</button>
+        <button class="weather-btn" data-weather="rain"
+                onclick="setWeather('rain')" title="下雨模式">🌧️</button>
+      </div>
+      <!-- 换装抽屉按钮 -->
+      <button class="skin-drawer-btn" id="skin-drawer-btn"
+              onclick="openSkinDrawer()" title="换装">👗</button>
+      <!-- BGM -->
+      <button class="hud-icon-btn" id="bgm-btn"
+              onclick="toggleBGM()" title="BGM: OFF">🎵</button>
+    </div>
+  </div>
+
+  <!-- 游戏容器 -->
+  <div id="game-wrapper">
+    <canvas id="farm-canvas"></canvas>
+  </div>
+
+  <!-- 弹窗遮罩 -->
+  <div id="modal-overlay">
+    <div id="modal-container"></div>
+  </div>
+
+  <!-- Toast 提示 -->
+  <div id="toast"></div>
+
+  <!-- 游戏脚本 -->
+  <script src="./assets/farm.js"></script>
+  <!-- 外网版提示 -->
+  <div id="ext-banner" style="position:fixed;bottom:0;left:0;right:0;z-index:999;
+    background:rgba(28,13,16,.92);border-top:1px solid #3d1e24;
+    padding:8px 20px;display:flex;align-items:center;justify-content:space-between;
+    font-size:12px;color:#9b7880;backdrop-filter:blur(8px);">
+    <span>🌾 外网版 · 农场数据存本地 · AI / 漂流瓶 / 日程需访问内网版</span>
+    <button onclick="document.getElementById('ext-banner').style.display='none'"
+      style="background:transparent;border:1px solid #3d1e24;color:#9b7880;
+      padding:3px 10px;border-radius:6px;cursor:pointer;font-size:11px;">知道了</button>
+  </div>
+</body>
+</html>
