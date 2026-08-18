@@ -2625,7 +2625,7 @@ async function waterPlot(plotId) {
     if (plot) { plot.water_count=(plot.water_count||0)+1; plot.stage=isPrivate?getPrivateStage(plot.water_count):getPublicStage(plot.water_count); }
   }
   var newIntimacy = Math.min(100,(State.intimacy||0)+10);
-  State.intimacy=newIntimacy; updateIntimacyHUD(newIntimacy);
+  State.intimacy=newIntimacy; updateHUD(newIntimacy);
   showToast('\u{1F4A7} \u6D47\u6C34\u6210\u529F\uFF01\u4eb2\u5bc6\u5ea6 +10 \u2192 '+newIntimacy);
   typeof playWaterSound==='function'&&playWaterSound();
   closeModal();
@@ -2934,11 +2934,11 @@ async function loadFarmData() {
     }
     State.plots=plots;
     State.intimacy=intimacyRows.length?(intimacyRows[0].score||0):0;
-    updateIntimacyHUD(State.intimacy);
+    updateHUD(State.intimacy);
   } catch(e) {
     console.error('loadFarmData error',e);
     State.intimacy=parseInt(localStorage.getItem('intimacy')||'0');
-    updateIntimacyHUD(State.intimacy);
+    updateHUD(State.intimacy);
   }
 }
 
