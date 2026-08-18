@@ -2624,7 +2624,7 @@ async function waterPlot(plotId) {
     var plot = State.plots.find(function(p){return p.id===plotId;});
     if (plot) { plot.water_count=(plot.water_count||0)+1; plot.stage=isPrivate?getPrivateStage(plot.water_count):getPublicStage(plot.water_count); }
   }
-  var newIntimacy = Math.min(100,(State.intimacy||0)+10);
+  var newIntimacy = Math.min(9999,(State.intimacy||0)+10);
   State.intimacy=newIntimacy; updateHUD(newIntimacy);
   showToast('\u{1F4A7} \u6D47\u6C34\u6210\u529F\uFF01\u4eb2\u5bc6\u5ea6 +10 \u2192 '+newIntimacy);
   typeof playWaterSound==='function'&&playWaterSound();
@@ -2736,23 +2736,23 @@ async function loadBottles() {
 async function sendBottle() {
   const input = document.getElementById('bottle-input');
   const btn = document.getElementById('bottle-send-btn');
-  const content = input.value.trim();
-  if (!content) return;
-  btn.disabled = true;
+  const txt = input ? input.value.trim() : '';
+  if (!txt) { showToast('请先写点什么 ✍️'); return; }
+  if (btn) btn.disabled = true;
   try {
-    const resp = await fetch('/api/bottle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content }),
+    const vid = getVisitorId();
+    await sbFetch('bottles', {
+      method: 'POST', prefer: 'return=minimal',
+      body: JSON.stringify({ content: txt, nickname: '旅人·' + vid.slice(0, 8) }),
     });
-    if (!resp.ok) throw new Error();
-    input.value = '';
+    if (input) input.value = '';
     showToast('🌊 漂流瓶已投出！');
     await loadBottles();
-  } catch {
-    showToast('❌ 投瓶失败');
+  } catch(e) {
+    console.error('sendBottle error', e);
+    showToast('❌ 投瓶失败，稍后再试');
   }
-  btn.disabled = false;
+  if (btn) btn.disabled = false;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2763,7 +2763,7 @@ function updateHUD() {
   const bar = document.getElementById('intimacy-bar');
   const rank = document.getElementById('intimacy-rank');
   const label = document.getElementById('intimacy-label');
-  if (bar) bar.style.width = Math.min(score, 100) + '%';
+  if (bar) bar.style.width = Math.min(score / 9999 * 100, 100) + '%';
   if (rank) {
     const ranks = [
       [0,  '🚶 路人'],
