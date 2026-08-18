@@ -2766,8 +2766,25 @@ document.addEventListener('keydown', e => {
 // 漂流瓶
 // ═══════════════════════════════════════════════════════
 async function loadBottles() {
-  var el = document.getElementById('bottle-list');
-  if (el) el.innerHTML = '<div style="font-size:13px;color:#9b7880;text-align:center;padding:16px">外网版暂不支持漂流瓶功能</div>';
+  const el = document.getElementById('bottle-list');
+  if (!el) return;
+  el.innerHTML = '<div style="font-size:13px;color:#9b7880;text-align:center;padding:8px">加载中...</div>';
+  try {
+    const rows = await sbFetch('bottles?select=content,nickname,created_at&order=created_at.desc&limit=20');
+    if (!rows.length) {
+      el.innerHTML = '<div style="font-size:13px;color:#9b7880;text-align:center;padding:16px">还没有漂流瓶，第一个投吧 🍾</div>';
+      return;
+    }
+    el.innerHTML = rows.map(r => {
+      const d = new Date(r.created_at);
+      const timeStr = (d.getMonth()+1) + '/' + d.getDate() + ' ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+      return '<div class="bottle-item"><div style="font-size:13px;color:#f5e6d0;line-height:1.8">' + r.content + '</div>'
+           + '<div class="bottle-from">— ' + (r.nickname||'匿名旅人') + ' · ' + timeStr + '</div></div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="font-size:13px;color:#9b7880;text-align:center;padding:8px">加载失败，稍后再试</div>';
+    console.error('loadBottles error', e);
+  }
 }
 
 async function sendBottle() {
@@ -2777,7 +2794,7 @@ async function sendBottle() {
   if (!content) return;
   btn.disabled = true;
   try {
-    const resp = await fetch('/api/bottle', {
+    const resp = await sbFetch('bottles', { method: 'POST', prefer: 'return=minimal', body: JSON.stringify({ content: bottleText, nickname: '匿名旅人', created_at: new Date().toISOString() }), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content }),
