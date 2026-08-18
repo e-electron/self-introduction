@@ -1,35 +1,3 @@
-// ═══ Supabase 配置（外网版公共后端）═══
-const SUPABASE_URL = 'https://cjyveohtixrlqouhhtra.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqeXZlb2h0aXhybHFvdWhodHJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMTc2NDEsImV4cCI6MjEwMjU5MzY0MX0.Fl621beNMGYNUYWJNdo1a1fKd3yEQdyOZZ0I0Xhc6J4';
-
-async function sbFetch(path, options = {}) {
-  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
-    ...options,
-    headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': options.prefer || 'return=representation',
-      ...(options.headers || {}),
-    },
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error('Supabase error: ' + err);
-  }
-  const text = await res.text();
-  return text ? JSON.parse(text) : [];
-}
-
-function getVisitorId() {
-  let id = localStorage.getItem('visitor_id');
-  if (!id) {
-    id = 'v_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-    localStorage.setItem('visitor_id', id);
-  }
-  return id;
-}
-
 /**
  * 图兰的像素农场 v2 - 全升级版
  * Canvas 960×600，像素风格
@@ -2665,88 +2633,68 @@ function buildPlotModal(plot, waterCount, stage, matureThreshold = 20) {
 
 async function plantCrop(plotId, cropType) {
   const vid = getVisitorId();
-  if (State.plots) {
-    const plot = State.plots.find(p => p.id === plotId);
-    if (plot) plot.crop_type = cropType;
-  }
+  if (State.plots) { const p = State.plots.find(p=>p.id===plotId); if(p) p.crop_type=cropType; }
   closeModal();
   showToast('\u{1F331} 种植成功！快去浇水让它长大吧');
-  if (typeof drawFarm === 'function') drawFarm();
+  typeof drawFarm === 'function' && drawFarm();
   try {
-    const existing = await sbFetch(
-      'farm_private_plots?id=eq.' + plotId + '&visitor_id=eq.' + encodeURIComponent(vid) + '&select=id'
-    );
-    if (existing.length) {
-      await sbFetch('farm_private_plots?id=eq.' + plotId + '&visitor_id=eq.' + encodeURIComponent(vid), {
-        method: 'PATCH', prefer: 'return=minimal',
-        body: JSON.stringify({ crop_type: cropType, updated_at: new Date().toISOString() }),
-      });
+    const rows = await sbFetch('farm_private_plots?id=eq.'+plotId+'&visitor_id=eq.'+encodeURIComponent(vid)+'&select=id');
+    if (rows.length) {
+      await sbFetch('farm_private_plots?id=eq.'+plotId+'&visitor_id=eq.'+encodeURIComponent(vid),
+        {method:'PATCH',prefer:'return=minimal',body:JSON.stringify({crop_type:cropType})});
     } else {
-      await sbFetch('farm_private_plots', {
-        method: 'POST', prefer: 'return=minimal',
-        body: JSON.stringify({ id: plotId, visitor_id: vid, crop_type: cropType, water_count: 0 }),
-      });
+      await sbFetch('farm_private_plots',
+        {method:'POST',prefer:'return=minimal',body:JSON.stringify({id:plotId,visitor_id:vid,crop_type:cropType,water_count:0})});
     }
-  } catch (e) { console.error('plantCrop error', e); }
+  } catch(e) { console.error('plantCrop error', e); }
 }
 
 async function waterPlot(plotId) {
   const vid = getVisitorId();
   const isPrivate = plotId >= 6;
-
+  // 乐观更新
   if (State.plots) {
     const plot = State.plots.find(p => p.id === plotId);
     if (plot) {
-      plot.water_count = (plot.water_count || 0) + 1;
+      plot.water_count = (plot.water_count||0) + 1;
       plot.stage = isPrivate ? getPrivateStage(plot.water_count) : getPublicStage(plot.water_count);
     }
   }
-  const newIntimacy = Math.min(100, (State.intimacy || 0) + 10);
+  const newIntimacy = Math.min(100, (State.intimacy||0) + 10);
   State.intimacy = newIntimacy;
   updateIntimacyHUD(newIntimacy);
-  showToast('\u{1F4A7} 浇水成功！亲密度 +10 → ' + newIntimacy);
-  playWaterSound && playWaterSound();
+  showToast('\u{1F4A7} 浇水成功！亲密度 +10 \u2192 ' + newIntimacy);
+  typeof playWaterSound === 'function' && playWaterSound();
   closeModal();
-  if (typeof drawFarm === 'function') drawFarm();
-
+  typeof drawFarm === 'function' && drawFarm();
+  // 写 Supabase
   try {
     if (isPrivate) {
-      const existing = await sbFetch(
-        'farm_private_plots?id=eq.' + plotId + '&visitor_id=eq.' + encodeURIComponent(vid) + '&select=water_count'
-      );
-      if (existing.length) {
-        await sbFetch('farm_private_plots?id=eq.' + plotId + '&visitor_id=eq.' + encodeURIComponent(vid), {
-          method: 'PATCH', prefer: 'return=minimal',
-          body: JSON.stringify({ water_count: existing[0].water_count + 1, updated_at: new Date().toISOString() }),
-        });
+      const rows = await sbFetch('farm_private_plots?id=eq.'+plotId+'&visitor_id=eq.'+encodeURIComponent(vid)+'&select=water_count');
+      if (rows.length) {
+        await sbFetch('farm_private_plots?id=eq.'+plotId+'&visitor_id=eq.'+encodeURIComponent(vid),
+          {method:'PATCH',prefer:'return=minimal',body:JSON.stringify({water_count:rows[0].water_count+1})});
       } else {
-        await sbFetch('farm_private_plots', {
-          method: 'POST', prefer: 'return=minimal',
-          body: JSON.stringify({ id: plotId, visitor_id: vid, water_count: 1 }),
-        });
+        await sbFetch('farm_private_plots',
+          {method:'POST',prefer:'return=minimal',body:JSON.stringify({id:plotId,visitor_id:vid,water_count:1})});
       }
     } else {
-      const existing = await sbFetch('farm_plots?id=eq.' + plotId + '&select=water_count');
-      if (existing.length) {
-        await sbFetch('farm_plots?id=eq.' + plotId, {
-          method: 'PATCH', prefer: 'return=minimal',
-          body: JSON.stringify({ water_count: existing[0].water_count + 1, last_waterer: vid, updated_at: new Date().toISOString() }),
-        });
+      const rows = await sbFetch('farm_plots?id=eq.'+plotId+'&select=water_count');
+      if (rows.length) {
+        await sbFetch('farm_plots?id=eq.'+plotId,
+          {method:'PATCH',prefer:'return=minimal',body:JSON.stringify({water_count:rows[0].water_count+1,last_waterer:vid})});
       }
     }
-    const intimacyRows = await sbFetch('farm_intimacy?visitor_id=eq.' + encodeURIComponent(vid) + '&select=score');
-    if (intimacyRows.length) {
-      await sbFetch('farm_intimacy?visitor_id=eq.' + encodeURIComponent(vid), {
-        method: 'PATCH', prefer: 'return=minimal',
-        body: JSON.stringify({ score: newIntimacy, updated_at: new Date().toISOString() }),
-      });
+    // 亲密度
+    const irows = await sbFetch('farm_intimacy?visitor_id=eq.'+encodeURIComponent(vid)+'&select=score');
+    if (irows.length) {
+      await sbFetch('farm_intimacy?visitor_id=eq.'+encodeURIComponent(vid),
+        {method:'PATCH',prefer:'return=minimal',body:JSON.stringify({score:newIntimacy})});
     } else {
-      await sbFetch('farm_intimacy', {
-        method: 'POST', prefer: 'return=minimal',
-        body: JSON.stringify({ visitor_id: vid, score: newIntimacy }),
-      });
+      await sbFetch('farm_intimacy',
+        {method:'POST',prefer:'return=minimal',body:JSON.stringify({visitor_id:vid,score:newIntimacy})});
     }
-  } catch (e) { console.error('waterPlot error', e); }
+  } catch(e) { console.error('waterPlot error', e); }
 }
 
 function getCurrentLevelIndex(score) {
@@ -3007,42 +2955,33 @@ function toggleTheme() {
 async function loadFarmData() {
   try {
     const vid = getVisitorId();
-    const publicPlots = await sbFetch('farm_plots?select=*&order=id');
-    const privatePlots = await sbFetch(
-      'farm_private_plots?select=*&visitor_id=eq.' + encodeURIComponent(vid) + '&order=id'
-    );
+    const [publicPlots, privatePlots, intimacyRows] = await Promise.all([
+      sbFetch('farm_plots?select=*&order=id'),
+      sbFetch('farm_private_plots?select=*&visitor_id=eq.' + encodeURIComponent(vid) + '&order=id'),
+      sbFetch('farm_intimacy?visitor_id=eq.' + encodeURIComponent(vid) + '&select=score'),
+    ]);
     const privateMap = {};
     privatePlots.forEach(p => { privateMap[p.id] = p; });
-
     const plots = [];
     for (let i = 1; i <= 5; i++) {
       const p = publicPlots.find(r => r.id === i) || { id: i, water_count: 0, crop_type: null };
-      plots.push({
-        id: i, water_count: p.water_count || 0, crop_type: p.crop_type || null,
-        last_waterer: p.last_waterer || null,
-        is_private: false, mature_threshold: 20,
-        stage: getPublicStage(p.water_count || 0),
-      });
+      plots.push({ id: i, water_count: p.water_count||0, crop_type: p.crop_type||null,
+        last_waterer: p.last_waterer||null, is_private: false, mature_threshold: 20,
+        stage: getPublicStage(p.water_count||0) });
     }
     for (let i = 6; i <= 10; i++) {
       const p = privateMap[i] || { id: i, water_count: 0, crop_type: null };
-      plots.push({
-        id: i, water_count: p.water_count || 0, crop_type: p.crop_type || null,
-        last_waterer: p.last_waterer || null,
-        is_private: true, mature_threshold: 8,
-        stage: getPrivateStage(p.water_count || 0),
-      });
+      plots.push({ id: i, water_count: p.water_count||0, crop_type: p.crop_type||null,
+        last_waterer: null, is_private: true, mature_threshold: 8,
+        stage: getPrivateStage(p.water_count||0) });
     }
     State.plots = plots;
-
-    const intimacyRows = await sbFetch(
-      'farm_intimacy?visitor_id=eq.' + encodeURIComponent(vid) + '&select=score'
-    );
-    State.intimacy = intimacyRows.length ? (intimacyRows[0].score || 0) : 0;
+    State.intimacy = intimacyRows.length ? (intimacyRows[0].score||0) : 0;
     updateIntimacyHUD(State.intimacy);
-  } catch (e) {
+  } catch(e) {
     console.error('loadFarmData error', e);
-    State.intimacy = parseInt(localStorage.getItem('intimacy') || '0');
+    State.plots = State.plots || [];
+    State.intimacy = parseInt(localStorage.getItem('intimacy')||'0');
     updateIntimacyHUD(State.intimacy);
   }
 }
@@ -3212,3 +3151,38 @@ document.addEventListener('click', function(e) {
     if (ev.key === 'Escape') { lb.remove(); document.removeEventListener('keydown', esc); }
   });
 });
+
+
+// ═══ Supabase 工具函数（外网公共后端）═══
+const SUPABASE_URL = 'https://cjyveohtixrlqouhhtra.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqeXZlb2h0aXhybHFvdWhodHJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMTc2NDEsImV4cCI6MjEwMjU5MzY0MX0.Fl621beNMGYNUYWJNdo1a1fKd3yEQdyOZZ0I0Xhc6J4';
+
+async function sbFetch(path, options = {}) {
+  const url = SUPABASE_URL + '/rest/v1/' + path;
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json',
+  };
+  if (options.prefer) headers['Prefer'] = options.prefer;
+  const res = await fetch(url, {
+    method: options.method || 'GET',
+    headers,
+    body: options.body || undefined,
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Supabase ' + res.status + ': ' + err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+function getVisitorId() {
+  let id = localStorage.getItem('visitor_id');
+  if (!id) {
+    id = 'v_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem('visitor_id', id);
+  }
+  return id;
+}
