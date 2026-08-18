@@ -3153,6 +3153,19 @@ document.addEventListener('click', function(e) {
 });
 
 
+// ── 亲密度 HUD 更新 ──
+function updateIntimacyHUD(score) {
+  const bar = document.getElementById('intimacy-bar');
+  const label = document.getElementById('intimacy-label');
+  const rank = document.getElementById('intimacy-rank');
+  if (bar) bar.style.width = Math.min(100, score) + '%';
+  if (label) label.textContent = '亲密度 ' + score;
+  const ranks = [[0,'路人'],[30,'熟人'],[60,'好友'],[90,'好基友']];
+  const r = [...ranks].reverse().find(([min]) => score >= min);
+  if (rank) rank.textContent = r ? r[1] : '路人';
+}
+
+
 // ═══ Supabase 工具函数（外网公共后端）═══
 const SUPABASE_URL = 'https://cjyveohtixrlqouhhtra.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqeXZlb2h0aXhybHFvdWhodHJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMTc2NDEsImV4cCI6MjEwMjU5MzY0MX0.Fl621beNMGYNUYWJNdo1a1fKd3yEQdyOZZ0I0Xhc6J4';
