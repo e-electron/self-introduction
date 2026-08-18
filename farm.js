@@ -3207,3 +3207,4 @@ function getVisitorId() {
   }
   return id;
 }
+}
