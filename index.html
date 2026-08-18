@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>图兰的像素农场 🌾</title>
-  <link rel="stylesheet" href="./assets/farm.css">
+  <link rel="stylesheet" href="./farm.css">
 </head>
 <body>
   <!-- HUD 层（HTML 叠加在 Canvas 上方） -->
@@ -22,7 +22,6 @@
       </div>
     </div>
     <div id="hud-right">
-      <!-- 天气/昼夜切换（3选1） -->
       <div class="weather-btn-group">
         <button class="weather-btn active" data-weather="day"
                 onclick="setWeather('day')" title="白天模式">☀️</button>
@@ -31,10 +30,8 @@
         <button class="weather-btn" data-weather="rain"
                 onclick="setWeather('rain')" title="下雨模式">🌧️</button>
       </div>
-      <!-- 换装抽屉按钮 -->
       <button class="skin-drawer-btn" id="skin-drawer-btn"
               onclick="openSkinDrawer()" title="换装">👗</button>
-      <!-- BGM -->
       <button class="hud-icon-btn" id="bgm-btn"
               onclick="toggleBGM()" title="BGM: OFF">🎵</button>
     </div>
@@ -54,16 +51,17 @@
   <div id="toast"></div>
 
   <!-- 游戏脚本 -->
-  <script src="./assets/farm.js"></script>
-  <!-- 外网版提示 -->
-  <div id="ext-banner" style="position:fixed;bottom:0;left:0;right:0;z-index:999;
-    background:rgba(28,13,16,.92);border-top:1px solid #3d1e24;
-    padding:8px 20px;display:flex;align-items:center;justify-content:space-between;
-    font-size:12px;color:#9b7880;backdrop-filter:blur(8px);">
-    <span>🌾 外网版 · 农场数据存本地 · AI / 漂流瓶 / 日程需访问内网版</span>
+  <script src="./farm.js"></script>
+
+  <!-- 外网版提示条（顶部，HUD 下方） -->
+  <div id="ext-banner" style="position:fixed;top:54px;left:0;right:0;z-index:999;
+    background:rgba(28,13,16,.95);border-bottom:1px solid #3d1e24;
+    padding:6px 16px;display:flex;align-items:center;justify-content:space-between;
+    font-size:11px;color:#9b7880;backdrop-filter:blur(8px);">
+    <span>🌾 外网版 · 数据存本地浏览器 · AI问答 / 漂流瓶 / 日程需访问内网版</span>
     <button onclick="document.getElementById('ext-banner').style.display='none'"
       style="background:transparent;border:1px solid #3d1e24;color:#9b7880;
-      padding:3px 10px;border-radius:6px;cursor:pointer;font-size:11px;">知道了</button>
+      padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px;flex-shrink:0;margin-left:12px;">知道了</button>
   </div>
 </body>
 </html>
